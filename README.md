@@ -3,66 +3,95 @@ jqTreeContextMenu
 
 A context menu "plugin" to jqTree.
 
-Demo
-----
-http://daviduv.github.io/jqTreeContextMenu/
+Heavily modifed version of [the original](https://github.com/DavidUv/jqTreeContextMenu).
 
 Usage
 -----
-Create a div that contains the menu. See the demo for an example how to
-do it using Bootstrap.
 
-Use jqTree to create the tree. See documentation for jqTree on how to do
-this (or look in the demo).
+Example:
 
-When the tree is created you can do the following to set up the context
-menu:
-```JavaScript
-$tree.jqTreeContextMenu(menu, callbacks);
 ```
-*menu* is the jQuery object of the menu div.
-*callbacks* is a hash structure with following format:
-```JavaScript
-{
-	menuItem: action,
-	menuItem: action
-}
-```
-*menuItem* is the name of the menu item (this will be matched to what's inside the menu item href anchor attribute).
-*action* is a function that will handle the click on that menu item.
+    <!-- context menu -->
+    <ul id="context-menu" class="dropdown-menu">
+        <li data-item="edit"><a>Edit</a></li>
+        <li data-item="delete"><a>Delete</a></li>
+        <li data-item="foo"><a>bar</a></li>
+    </ul>  
 
-*Example*
-```JavaScript
-$('tree').jqTreeContextMenu($('#myMenu'), {
-    "edit": function (node) { alert('Edit node: ' + node.name); },
-    "delete": function (node) { alert('Delete node: ' + node.name); },
-    "add": function (node) { alert('Add node: ' + node.name); }
-});
-```
+    <!-- jqTree -->
+    <div id="tree"></div>
 
-**API**
-
-There is also a minimal API to enable/disable menu items.
-```JavaScript
-// Get handle to API when initializing the menu.
-var menuAPI = $('tree').jqTreeContextMenu(...);
-
-// Disable all menu items
-menuAPI.jqTreeContextMenu.disable()
-// Disable all menu items of a certain kind. Here 'add' and 'delete'
-// menu items are deleted.
-menuAPI.jqTreeContextMenu.disable(['add', 'delete'])
-// Disable menu items for a certain node in the tree.
-menuAPI.jqTreeContextMenu.disable(nodeName, ['add', 'delete'])
-
-// Enable all menu items
-menuAPI.jqTreeContextMenu.enable()
-// Enable all menu items of a certain kind. Here 'add' and 'delete'
-// menu items are deleted.
-menuAPI.jqTreeContextMenu.enable(['add', 'delete'])
-// Enable menu items for a certain node in the tree.
-menuAPI.jqTreeContextMenu.enable(nodeName, ['add', 'delete'])
+    <script>
+	  $(function() {
+	      var data = [
+    	      {
+        	       name: 'node1', id: 1,
+        		   children: [
+            	       { name: 'child1', id: 2 },
+            		   { name: 'child2', id: 3 }
+        		   ]
+    		  },
+    		  {
+        	      name: 'node2', id: 4,
+        		  children: [
+            	      { name: 'child3', id: 5 }
+        	      ]
+    		  }
+		  ];
+		  $('#tree').tree({ data: data });
+		  $('#tree').jqTreeContextMenu({
+			  menu: '#context-menu',
+			  onContextMenuItem: function(e, node, $el){
+				  console.log($el.data("item"));
+				  console.log(node.name);
+			  }
+		  });
+	  });
+    </script>
+</body>
 ```
 
-For a complete example of usage, see the demo at http://daviduv.github.io/jqTreeContextMenu/.
+Options
+-----
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| menu | string | undefined | A jQuery selector for the menu (ie `#context-menu`) |
+| selectClickedNode | bool | true | Whether or not the jqTree node should be selected when right-clicked |
+| onContextMenuItem | closure | null | Called when a context menu item is clicked. `functon(e, node, $menuItem) { }`|
+| contextMenuDecider | closure | null | Called before the menu is shown to allow choosing the context menu (see below) |
+| menuFadeDuration | int | 250 | The time in miliseconds for the menu fade in/out effect |
+
+Examples
+-----
+
+**contextMenuDecider**
+
+Use this closure option to decide the which context menu should be shown when a node is clicked:
+
+```
+    $('#tree').jqTreeContextMenu({
+        menu: '#context-menu',
+        contextMenuDecider: function(node) {
+            // Return a special context menu for the "root" jqTree node...
+	    if (!node.parent.parent) {
+                return '#context-menu-root';
+            }
+
+            // Return false and the default context menu will be shown...
+            return false;
+	}
+    });
+```
+
+**onContextMenuItem**
+
+Use this closure to decide what action to take when a menu item is clicked. See the use example for more detail.
+
+Events
+-----
+
+| Name | Parameters | Description |
+|------|------------|-------------|
+| cm-jqtree.item.click | event, node, $el | This is triggered when a menu item is clicked. The `$el` is the menu item itself |
 
