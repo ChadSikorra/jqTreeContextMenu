@@ -82,15 +82,11 @@
             }
 
             // Handle click on menu items, if it's not disabled.
-            var menuItems = $menuEl.find('li:not(.disabled) a');
-            if (menuItems.length !== 0) {
-                menuItems.unbind('click');
-                menuItems.click(function (e) {
-                    e.stopImmediatePropagation();
-                    dismissContextMenu();
-                    $el.trigger('cm-jqtree.item.click', event.node, $(this));
-                });
-            }
+            $menuEl.find('li').off('click.contextmenu').on('click.contextmenu', function (e) {
+                e.stopImmediatePropagation();
+                dismissContextMenu();
+                $el.trigger('cm-jqtree.item.click', [event.node, $(this)]);
+            });
         });
 
         this.disable = function () {
