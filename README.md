@@ -22,31 +22,31 @@ Example:
     <div id="tree"></div>
 
     <script>
-	  $(function() {
-	      var data = [
-    	      {
-        	       name: 'node1', id: 1,
-        		   children: [
-            	       { name: 'child1', id: 2 },
-            		   { name: 'child2', id: 3 }
-        		   ]
-    		  },
-    		  {
-        	      name: 'node2', id: 4,
-        		  children: [
-            	      { name: 'child3', id: 5 }
-        	      ]
-    		  }
-		  ];
-		  $('#tree').tree({ data: data });
-		  $('#tree').jqTreeContextMenu({
-			  menu: '#context-menu',
-			  onContextMenuItem: function(e, node, $el){
-				  console.log($el.data("item"));
-				  console.log(node.name);
-			  }
-		  });
-	  });
+      $(function() {
+          var data = [
+              {
+                   name: 'node1', id: 1,
+                   children: [
+                       { name: 'child1', id: 2 },
+                       { name: 'child2', id: 3 }
+                   ]
+              },
+              {
+                  name: 'node2', id: 4,
+                  children: [
+                      { name: 'child3', id: 5 }
+                  ]
+              }
+          ];
+          $('#tree').tree({ data: data });
+          $('#tree').jqTreeContextMenu({
+              menu: '#context-menu',
+              onContextMenuItem: function(e, node, $el){
+                  console.log($el.data("item"));
+                  console.log(node.name);
+              }
+          });
+      });
     </script>
 </body>
 ```
@@ -74,13 +74,13 @@ Use this closure option to decide which context menu should be shown when a node
         menu: '#context-menu',
         contextMenuDecider: function(node) {
             // Return a special context menu for the "root" jqTree node...
-	    if (!node.parent.parent) {
+            if (!node.parent.parent) {
                 return '#context-menu-root';
             }
 
             // Return false and the default context menu will be shown...
             return false;
-	}
+        }
     });
 ```
 
