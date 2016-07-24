@@ -67,7 +67,7 @@ Examples
 
 **contextMenuDecider**
 
-Use this closure option to decide the which context menu should be shown when a node is clicked:
+Use this closure option to decide which context menu should be shown when a node is clicked:
 
 ```
     $('#tree').jqTreeContextMenu({
