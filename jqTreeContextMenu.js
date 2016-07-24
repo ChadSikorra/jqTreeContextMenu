@@ -3,42 +3,33 @@
         throw "Error jqTree is not loaded.";
     }
 
-    $.fn.jqTreeContextMenu = function (menuElement, callbacks) {
-        /** TODO:
-         * Different menu for different node type
-         */
-
-        var self = this;
+    $.fn.jqTreeContextMenu = function (options) {
+        var defaults = {
+            menuFadeDuration: 250,
+            selectClickedNode: true,
+            onContextMenuItem: null
+        };
+        var settings = $.extend({}, defaults, options);
         var $el = this;
-        var menuFadeDuration = 250;
-        var menuType = '';
         var $menuEl;
 
         // Check if useContextMenu option is set
         var jqTree = $el.data('simple_widget_tree');
-        var isContextTrue = jqTree.options.useContextMenu;
-
-        if(!isContextTrue){
-            throw 'Error: useContextMenu is set as false. Set it true in options before using contextmenu.';
+        if(!jqTree || !jqTree.options.useContextMenu){
+            throw 'Either jqTree was not found or useContextMenu in jqTree is set to false.';
         }
 
         // Check if the parameter is a jquery object
-        if(menuElement instanceof jQuery){
-            // This is a jQuery object.
-            // Same menu for complete tree
-            menuType = 'SINGLE';
-            $menuEl = menuElement;
-
-            // Hide the menu div.
-            $menuEl.hide();
+        if(settings.menu instanceof jQuery) {
+            $menuEl = settings.menu;
+        } else if (typeof settings.menu == "string") {
+            $menuEl = $(settings.menu);
+        } else {
+            throw 'You must pass a menu selector string or jquery element to the jqTreeContextMenu.';
         }
-        else if (menuElement instanceof Array) {
-            // Diff menu for diff node
-            menuType = 'MULTI';
-        }
-        else {
-            // Awww! We don't know what kind of input is this
-            throw 'Error: Input parameters are incorrect';
+        $menuEl.hide();
+        if (settings.onContextMenuItem) {
+            this.bind('cm-jqtree.item.click', settings.onContextMenuItem);
         }
 
         // This hash holds all menu items that should be disabled for a specific node.
@@ -50,32 +41,6 @@
             var y = event.click_event.pageY;
             var yPadding = 5;
             var xPadding = 5;
-            var nodeId = event.node.id;
-
-            // If type of menu is SINGLE, show the menuEl,
-            // Else we need to get the menuEl of this particular node
-            switch (menuType){
-                case 'MULTI':{
-                    // Hide the previous which is being displayed
-                    if($menuEl instanceof jQuery){
-                        $menuEl.fadeOut(menuFadeDuration);
-
-                        // deselect everyone
-                        $el.tree('selectNode', null);
-                    }
-
-                    // Get id of the current node
-                    var result = $.grep(menuElement, function(e){ return e.id == nodeId; });
-
-                    if(result.length === 0){
-                        return; // No menu defined for this node
-                    } else {
-                        $menuEl = result[0].menu_element;
-                    }
-
-                    break;
-                }
-            }
 
             var menuHeight = $menuEl.height();
             var menuWidth = $menuEl.width();
@@ -90,55 +55,29 @@
                 x = x - menuWidth;
             }
 
-            // Handle disabling and enabling of menu items on specific nodes.
-            if (Object.keys(nodeToDisabledMenuItems).length > 0) {
-                if (event.node.name in nodeToDisabledMenuItems) {
-                    var nodeName = event.node.name;
-                    var items = nodeToDisabledMenuItems[nodeName];
-                    if (items.length === 0) {
-                        $menuEl.find('li').addClass('disabled');
-                        $menuEl.find('li > a').unbind('click');
-                    } else {
-                        $menuEl.find('li > a').each(function () {
-                            $(this).closest('li').removeClass('disabled');
-                            var hrefValue = $(this).attr('href');
-                            var value = hrefValue.slice(hrefValue.indexOf("#") + 1, hrefValue.length)
-                            if ($.inArray(value, items) > -1) {
-                                $(this).closest('li').addClass('disabled');
-                                $(this).unbind('click');
-                            }
-                        });
-                    }
-                } else {
-                    $menuEl.find('li.disabled').removeClass('disabled');
-                }
-            }
-
             // Must call show before we set the offset (offset can not be set on display: none elements).
-            $menuEl.fadeIn(menuFadeDuration);
-
+            $menuEl.fadeIn(settings.menuFadeDuration);
             $menuEl.offset({ left: x, top: y });
 
             var dismissContextMenu = function () {
                 $(document).unbind('click.jqtreecontextmenu');
                 $el.unbind('tree.click.jqtreecontextmenu');
-                $menuEl.fadeOut(menuFadeDuration);
-            }
+                $menuEl.fadeOut(settings.menuFadeDuration);
+            };
+
             // Make it possible to dismiss context menu by clicking somewhere in the document.
             $(document).bind('click.jqtreecontextmenu', function (e) {
                 if (x != e.pageX || y != e.pageY) {
                     dismissContextMenu();
                 }
             });
-
             // Dismiss context menu if another node in the tree is clicked.
-            $el.bind('tree.click.jqtreecontextmenu', function (e) {
+            $el.bind('tree.click.jqtreecontextmenu', function () {
                 dismissContextMenu();
             });
 
-            // Make selection follow the node that was right clicked on.
-            var selectedNode = $el.tree('getSelectedNode');
-            if (selectedNode !== event.node) {
+            // Make the selection follow the node that was right clicked on (if desired).
+            if (settings.selectClickedNode && $el.tree('getSelectedNode') !== event.node) {
                 $el.tree('selectNode', event.node);
             }
 
@@ -149,13 +88,7 @@
                 menuItems.click(function (e) {
                     e.stopImmediatePropagation();
                     dismissContextMenu();
-                    var hrefAnchor = e.currentTarget.attributes.href.nodeValue;
-                    var funcKey = hrefAnchor.slice(hrefAnchor.indexOf("#") + 1, hrefAnchor.length)
-                    var callbackFn = callbacks[funcKey];
-                    if (callbackFn) {
-                        callbackFn(event.node);
-                    }
-                    return false;
+                    $el.trigger('cm-jqtree.item.click', event.node, $(this));
                 });
             }
         });
@@ -174,7 +107,7 @@
                 }
                 $menuEl.find('li > a').each(function () {
                     var hrefValue = $(this).attr('href');
-                    var value = hrefValue.slice(hrefValue.indexOf("#") + 1, hrefValue.length)
+                    var value = hrefValue.slice(hrefValue.indexOf("#") + 1, hrefValue.length);
                     if ($.inArray(value, items) > -1) {
                         $(this).closest('li').addClass('disabled');
                         $(this).unbind('click');
@@ -183,9 +116,7 @@
                 nodeToDisabledMenuItems = {};
             } else if (arguments.length === 2) {
                 // Called as: api.disable(nodeName, ['edit','remove'])
-                var nodeName = arguments[0];
-                var items = arguments[1];
-                nodeToDisabledMenuItems[nodeName] = items;
+                nodeToDisabledMenuItems[arguments[0]] = arguments[1];
             }
         };
 
